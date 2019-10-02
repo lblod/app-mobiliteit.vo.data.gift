@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  identifier:
+    restart: "no"
+    ports:
+      - 80:80
+  dispatcher:
+    restart: "no"
+  database:
+    restart: "no"
+  resource:
+    restart: "no"
+  filehost:
+    restart: "no"
+  migrations:
+    restart: "no"

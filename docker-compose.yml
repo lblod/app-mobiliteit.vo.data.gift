@@ -1,0 +1,69 @@
+version: '3.4'
+
+x-logging:
+  &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  identifier:
+    image: semtech/mu-identifier:1.7.0
+    links:
+      - dispatcher:dispatcher
+    ports:
+      - "80:80"
+    labels:
+      - "logging=true"
+    restart: always
+    logging: *default-logging
+  dispatcher:
+    image: semtech/mu-dispatcher:v2-dev
+    links:
+      - resource:resource
+      - filehost:filehost
+    volumes:
+      - ./config/dispatcher:/config
+    labels:
+      - "logging=true"
+    restart: always
+    logging: *default-logging
+  database:
+    image: tenforce/virtuoso:1.3.2-virtuoso7.2.5.1
+    environment:
+      SPARQL_UPDATE: "true"
+      DEFAULT_GRAPH: "http://mu.semte.ch/application"
+    ports:
+      - "8890:8890"
+    volumes:
+      - ./data/db:/data
+      - ./config/virtuoso.ini:/data/virtuoso.ini
+    labels:
+      - "logging=true"
+    restart: always
+    logging: *default-logging
+  resource:
+    image: semtech/mu-cl-resources:1.18.0
+    volumes:
+      - ./config/resources:/config
+    labels:
+      - "logging=true"
+    restart: always
+    logging: *default-logging
+  filehost:
+    image: semtech/static-file-service
+    volumes:
+      - ./data/files/:/data
+    labels:
+      - "logging=true"
+    restart: always
+    logging: *default-logging
+  migrations:
+   image: semtech/mu-migrations-service:0.5.1
+   volumes:
+    - ./config/migrations:/data/migrations
+   labels:
+     - "logging=true"
+   restart: always
+   logging: *default-logging
