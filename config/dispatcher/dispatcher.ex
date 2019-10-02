@@ -11,8 +11,10 @@ defmodule Dispatcher do
     Proxy.forward conn, path, "http://resource/images/"
   end
 
-  match "/images/*path", %{} do
-    Proxy.forward conn, path, "http://filehost/images/"
+  match "/images/:name", %{} do
+    Proxy.forward conn, [], "http://filehost/images/" <> name <> ".png"
+  end
+
   match "/*path", %{ last_call: true } do
     send_resp( conn, 404, "{ \"message\": \"Could not find response, see config/dispatcher/dispatcher.ex\", \"code\": 404 }" )
   end
