@@ -1,67 +1,75 @@
 (in-package :mu-cl-resources)
+;;; BESLUIT-mobiliteit
+;;; https://data.vlaanderen.be/doc/applicatieprofiel/besluit-mobiliteit
+;;; https://data.vlaanderen.be/doc/applicatieprofiel/verkeersborden/
 
-;;;;
-;; NOTE
-;; docker-compose stop; docker-compose rm; docker-compose up
-;; after altering this file.
+(define-resource verkeersbordcombinatie ()
+  :class (s-prefix "lblodmow:Verkeersbordcombinatie")
+  :properties `((:identifier :string ,(s-prefix "dct:identifier"))) ; identifier from irg
+  :has-many `((maatregelconcept :via ,(s-prefix "dct:hasPart")
+                                 :as "maatregelconcepten"))
+  :resource-base (s-url "http://data.lblod.info/verkeersbordcombinaties/")
+  :on-path "verkeersbordcombinaties")
 
-;; Describe your resources here
+(define-resource maatregelconcept ()
+  :class (s-prefix "lblodmow:MaatregelConcept")
+  :properties `((:beschrijving :string ,(s-prefix "dct:description")))
+  :has-one `((verkeersbordcombinatie :via ,(s-prefix "dct:hasPart")
+                                     :inverse t
+                                     :as "combinaties")
+             (verkeersbordconcept :via ,(s-prefix "lblodmow:verkeersbordconcept")
+                                  :as "verkeersbordconcept"))
+  :resource-base (s-url "http://data.lblod.info/verkeersbordcombinaties/")
+  :on-path "maatregelconcepten")
+(define-resource afbeelding ()
+  :class (s-prefix "foaf:Image")
+  :properties `((:filename :string ,(s-prefix "nfo:fileName"))
+                (:format :string ,(s-prefix "dct:format"))
+                (:size :number ,(s-prefix "nfo:fileSize"))
+                (:extension :string ,(s-prefix "dbpedia:fileExtension"))
+                (:created :datetime ,(s-prefix "nfo:fileCreated")))
+  :has-one `((file :via ,(s-prefix "nie:dataSource")
+                   :inverse t
+                   :as "download")
+             (file-address :via ,(s-prefix "nie:dataSource")
+                           :as "data-source"))
+  :resource-base (s-url "http://data.lblod.info/files/")
+  :features `(no-pagination-defaults include-uri)
+  :on-path "images")
 
-;; The general structure could be described like this:
-;;
-;; (define-resource <name-used-in-this-file> ()
-;;   :class <class-of-resource-in-triplestore>
-;;   :properties `((<json-property-name-one> <type-one> ,<triplestore-relation-one>)
-;;                 (<json-property-name-two> <type-two> ,<triplestore-relation-two>>))
-;;   :has-many `((<name-of-an-object> :via ,<triplestore-relation-to-objects>
-;;                                    :as "<json-relation-property>")
-;;               (<name-of-an-object> :via ,<triplestore-relation-from-objects>
-;;                                    :inverse t ; follow relation in other direction
-;;                                    :as "<json-relation-property>"))
-;;   :has-one `((<name-of-an-object :via ,<triplestore-relation-to-object>
-;;                                  :as "<json-relation-property>")
-;;              (<name-of-an-object :via ,<triplestore-relation-from-object>
-;;                                  :as "<json-relation-property>"))
-;;   :resource-base (s-url "<string-to-which-uuid-will-be-appended-for-uri-of-new-items-in-triplestore>")
-;;   :on-path "<url-path-on-which-this-resource-is-available>")
+(define-resource verkeersbordconcept ()
+  :class (s-prefix "mobiliteit:Verkeersbordconcept")
+  :properties `((:betekenis :string ,(s-prefix "skos:scopeNote"))
+                (:verkeersbordcode :string ,(s-prefix "skos:prefLabel"))
+                )
+  :has-one `((afbeelding :via  ,(s-prefix "mobiliteit:grafischeWeergave")
+                         :as "afbeelding")
+             (verkeersbordconcept-status-code :via ,(s-url "http://www.w3.org/2003/06/sw-vocab-status/ns#term_status")
+                                         :as "status"))
+  :has-many `((verkeersbordcategorie :via ,(s-prefix "org:classification")
+                                      :as "categorie")
+              (maatregelconcept :via ,(s-prefix "lblodmow:verkeersbordconcept")
+                                      :inverse t
+                                      :as "maatregelconcepten"))
+  :resource-base (s-url "http://data.lblod.info/verkeersbordconcepten/")
+  :on-path "verkeersbordconcepten")
 
+(define-resource verkeersbordcategorie ()
+  :class (s-prefix "mobiliteit:Verkeersbordcategorie")
+  :properties `((:label :string ,(s-prefix "skos:prefLabel")))
+  :has-many `((verkeersbordconcept :via ,(s-prefix "org:classification")
+                                   :inverse t
+                                   :as "verkeersbordconcepten"))
+  :resource-base (s-url "http://data.lblod.info/verkeersbordcategorieen/")
+  :on-path "verkeersbordcategorieen"
+  )
 
-;; An example setup with a catalog, dataset, themes would be:
-;;
-;; (define-resource catalog ()
-;;   :class (s-prefix "dcat:Catalog")
-;;   :properties `((:title :string ,(s-prefix "dct:title")))
-;;   :has-many `((dataset :via ,(s-prefix "dcat:dataset")
-;;                        :as "datasets"))
-;;   :resource-base (s-url "http://webcat.tmp.semte.ch/catalogs/")
-;;   :on-path "catalogs")
-
-;; (define-resource dataset ()
-;;   :class (s-prefix "dcat:Dataset")
-;;   :properties `((:title :string ,(s-prefix "dct:title"))
-;;                 (:description :string ,(s-prefix "dct:description")))
-;;   :has-one `((catalog :via ,(s-prefix "dcat:dataset")
-;;                       :inverse t
-;;                       :as "catalog"))
-;;   :has-many `((theme :via ,(s-prefix "dcat:theme")
-;;                      :as "themes"))
-;;   :resource-base (s-url "http://webcat.tmp.tenforce.com/datasets/")
-;;   :on-path "datasets")
-
-;; (define-resource distribution ()
-;;   :class (s-prefix "dcat:Distribution")
-;;   :properties `((:title :string ,(s-prefix "dct:title"))
-;;                 (:access-url :url ,(s-prefix "dcat:accessURL")))
-;;   :resource-base (s-url "http://webcat.tmp.tenforce.com/distributions/")
-;;   :on-path "distributions")
-
-;; (define-resource theme ()
-;;   :class (s-prefix "tfdcat:Theme")
-;;   :properties `((:pref-label :string ,(s-prefix "skos:prefLabel")))
-;;   :has-many `((dataset :via ,(s-prefix "dcat:theme")
-;;                        :inverse t
-;;                        :as "datasets"))
-;;   :resource-base (s-url "http://webcat.tmp.tenforce.com/themes/")
-;;   :on-path "themes")
-
-;;
+(define-resource verkeersbordconcept-status-code ()
+  :class (s-prefix "lblodmow:VerkeersbordconceptStatusCode")
+  :properties `((:label :string ,(s-prefix "skos:prefLabel")))
+  :has-many `((verkeersbordconcept :via ,(s-url "http://www.w3.org/2003/06/sw-vocab-status/ns#term_status")
+                                   :inverse t
+                                   :as "verkeersbordconcepten"))
+  :resource-base (s-url "http://data.lblod.info/verkeersbordconcept-status-codes/")
+  :on-path "verkeersbordconcept-status-codes"
+  )
