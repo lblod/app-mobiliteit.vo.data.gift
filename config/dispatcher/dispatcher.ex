@@ -7,7 +7,7 @@ defmodule Dispatcher do
     json: [ "application/json", "application/vnd.api+json" ]
   ]
 
-  match "/images/*path", %{ accept: %{ json: true } } do
+  get "/images/*path", %{ accept: %{ json: true } } do
     Proxy.forward conn, path, "http://resource/images/"
   end
 
