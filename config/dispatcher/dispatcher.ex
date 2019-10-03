@@ -3,16 +3,17 @@ defmodule Dispatcher do
 
   define_accept_types [
     text: [ "text/*" ],
+    image: ["image/*"],
     html: [ "text/html", "application/xhtml+html" ],
     json: [ "application/json", "application/vnd.api+json" ]
   ]
 
+  match "/images/:name", %{ accept: %{ image: true } } do
+    Proxy.forward conn, [name <> ".png"], "http://filehost/images/"
+  end
+   
   get "/images/*path", %{ accept: %{ json: true } } do
     Proxy.forward conn, path, "http://resource/images/"
-  end
-
-  match "/images/:name", %{} do
-    Proxy.forward conn, [name <> ".png"], "http://filehost/images/"
   end
 
   match "/*path", %{ last_call: true } do
