@@ -12,7 +12,7 @@ defmodule Dispatcher do
   end
 
   match "/images/:name", %{} do
-    Proxy.forward conn, [], "http://filehost/images/" <> name <> ".png"
+    Proxy.forward conn, [name <> ".png"], "http://filehost/images/"
   end
 
   match "/*path", %{ last_call: true } do
