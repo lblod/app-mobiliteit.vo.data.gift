@@ -53,6 +53,7 @@ services:
     image: semtech/static-file-service
     volumes:
       - ./data/files/:/data
+      - ./config/nginx:/config
     labels:
       - "logging=true"
     restart: always
