@@ -28,7 +28,7 @@ services:
     restart: always
     logging: *default-logging
   database:
-    image: redpencil/virtuoso:1.1.0
+    image: redpencil/virtuoso:1.0.0
     environment:
       SPARQL_UPDATE: "true"
       DEFAULT_GRAPH: "http://mu.semte.ch/application"
